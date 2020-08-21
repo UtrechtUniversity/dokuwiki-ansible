@@ -1,0 +1,174 @@
+---
+# copyright Utrecht University
+#
+
+- name: Create Dokuwiki group
+  group:
+    name: '{{ dokuwiki_group }}'
+    state: present
+
+
+- name: Create Dokuwiki user
+  user:
+    name: '{{ dokuwiki_user }}'
+    comment: Dokuwiki application account
+    group: '{{ dokuwiki_group }}'
+    # Need to add user to Apache group in order to write to be able to store PHP session data
+    groups: apache
+
+
+- name: Check that Dokuwiki data directory exists
+  stat:
+    path: '{{ dokuwiki_maindir }}/data'
+  register: data_directory
+
+
+- name: Check that Dokuwiki configuration directory exists
+  stat:
+    path: '{{ dokuwiki_maindir }}/conf'
+  register: conf_directory
+
+
+- name: Create Dokuwiki data, conf and download directory structure
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+  with_items:
+   - ' {{ dokuwiki_maindir }}'
+   - '{{ dokuwiki_maindir }}/download'
+   - '{{ dokuwiki_maindir }}/conf'
+   - '{{ dokuwiki_maindir }}/data'
+
+
+- name: Extract Dokuwiki code
+  unarchive:
+    src: 'https://download.dokuwiki.org/src/dokuwiki/dokuwiki-{{ dokuwiki_version }}.tgz'
+    dest: '{{ dokuwiki_maindir }}/download'
+    remote_src: yes
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+
+
+- name: Copy Dokuwiki code to webroot
+  synchronize:
+    src: '{{ dokuwiki_maindir }}/download/dokuwiki-{{ dokuwiki_version }}/'
+    dest: '{{ dokuwiki_webroot }}'
+  when: data_directory.isdir is not defined
+  delegate_to: "{{ inventory_hostname }}"
+
+
+- name: Enable Dokuwiki standard htaccess config
+  copy:
+    src: '{{ dokuwiki_webroot }}/.htaccess.dist'
+    dest: '{{ dokuwiki_webroot }}/.htaccess'
+    remote_src: yes
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0640'
+
+
+- name: Initialize Dokuwiki data directory if it was just created
+  synchronize:
+    src: '{{ dokuwiki_webroot }}/data/'
+    dest: '{{ dokuwiki_maindir }}/data'
+  when: data_directory.isdir is not defined
+  delegate_to: "{{ inventory_hostname }}"
+
+
+- name: Initialize Dokuwiki conf directory if it was just created
+  synchronize:
+    src: '{{ dokuwiki_webroot }}/conf/'
+    dest: '{{ dokuwiki_maindir }}/conf'
+  when: conf_directory.isdir is not defined
+  delegate_to: "{{ inventory_hostname }}"
+
+
+- name: Configure Dokuwiki local.php
+  template:
+    src: templates/local.php.j2
+    dest: '{{ dokuwiki_maindir }}/conf/local.php'
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+
+
+- name: Create Dokuwiki user file
+  template:
+    src: templates/users.auth.php.j2
+    dest: '{{ dokuwiki_maindir }}/conf/users.auth.php'
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+
+
+- name: Check that Dokuwiki authorization config file exists
+  stat:
+    path: '{{ dokuwiki_maindir }}/conf/acl.auth.php'
+  register: acl_config_file
+
+
+- name: Create initial authorization config file, if it does not exist
+  template:
+    src: templates/acl.auth.php.j2
+    dest: '{{ dokuwiki_maindir }}/conf/acl.auth.php'
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+  when: acl_config_file.isfile is not defined
+
+
+- name: Configure Dokuwiki preload file for configuration
+  template:
+    src: templates/preload.php.j2
+    dest: '{{ dokuwiki_webroot }}/inc/preload.php'
+    owner: '{{ dokuwiki_user }}'
+    group: '{{ dokuwiki_group }}'
+    mode: '0750'
+
+
+- name: Configure Apache VHost
+  template:
+    src: templates/dokuwiki-vhost.conf.j2
+    dest: /etc/httpd/conf.d/dokuwiki-vhost.conf
+    owner: apache
+    group: apache
+    mode: '0644'
+  notify: Restart Apache webserver
+
+
+- name: SELinux - allow Dokuwiki RW access to conf directory
+  sefcontext:
+    target: '{{ dokuwiki_maindir }}/conf(/.*)?'
+    setype: httpd_sys_rw_content_t
+    state: present
+  register: confcontext
+  when: ansible_selinux.status == "enabled"
+
+
+- name: SELinux - allow Dokuwiki RW access to data directory
+  sefcontext:
+    target: '{{ dokuwiki_maindir }}/data(/.*)?'
+    setype: httpd_sys_rw_content_t
+    state: present
+  register: datacontext
+  when: ansible_selinux.status == "enabled"
+
+
+- name: Apply new SELinux file context to Dokuwiki application directories
+  command: restorecon -irv '{{ item }}'
+  when: datacontext is changed or confcontext is changed
+  with_items:
+   - '{{ dokuwiki_maindir }}/conf'
+   - '{{ dokuwiki_maindir }}/data'
+
+
+- name: SELinux - allow network connections for plugin and extension manager
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+  when: ansible_selinux.status == "enabled"

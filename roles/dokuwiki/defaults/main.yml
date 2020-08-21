@@ -1,0 +1,32 @@
+dokuwiki_maindir: /dokuwiki
+dokuwiki_webroot: /var/www/html
+dokuwiki_user: apache
+dokuwiki_group: apache
+dokuwiki_servername: dokuwiki.local
+dokuwiki_version: 2020-07-29
+dokuwiki_title: Wiki Yoda
+dokuwiki_start: Main page
+dokuwiki_superuser: admin
+dokuwiki_defaultgroup: user
+
+# Should only be disabled for local development/testing environments
+dokuwiki_enable_tls: True
+
+# HSTS is always disabled if TLS is disabled
+dokuwiki_enable_hsts: True
+
+# Use empty license by default (suitable for internal wikis)
+dokuwiki_license: ''
+
+# By default, disable self-registration of users. In order to disable multiple actions,
+# use commas as separators, e.g. 'register,search'.
+dokuwiki_disableactions: register,resendpwd,profile_delete
+
+# Default admin credentials are: admin / admin
+# Change this when deploying to a real server
+dokuwiki_users:
+  - username: admin
+    passwordhash: $2a$15$tavJPYxA3TkWow9biRifBuOzqLEOsSxSpswgejPATuYRawcRTluZO
+    fullname: Admin User
+    email: example@example.org
+    groups: user,admin

@@ -1,0 +1,48 @@
+---
+# copyright Utrecht University
+
+- name: Add repository for PHP 7.3
+  yum:
+    name: http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+    state: present
+
+
+- name: Enable repository for PHP 7.3
+  yum_repository:
+    name: remi-php73
+    description: Remi's PHP 7.3 RPM repository for Enterprise Linux 7
+    mirrorlist: http://rpms.remirepo.net/enterprise/7/php73/mirror
+    enabled: yes
+    gpgcheck: 1
+    gpgkey: http://rpms.remirepo.net/RPM-GPG-KEY-remi
+  register: php_repo
+
+
+- name: Ensure PHP 7.3 packages are installed
+  yum:
+    name:
+      - php-7.3*
+      - php-cli-7.3*
+      - php-xml-7.3*
+      - php-gd-7.3*
+    state: present
+  when: not ansible_check_mode
+  notify: Restart Apache webserver
+
+
+- name: Allow PHP to open TCP sockets in SELinux config
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+  when: ansible_selinux.status == "enabled"
+
+
+- name: Ensure PHP is configured
+  template:
+    src: php.ini.j2
+    dest: "/etc/php.ini"
+    owner: root
+    group: root
+    mode: 0600
+  notify: Restart Apache webserver

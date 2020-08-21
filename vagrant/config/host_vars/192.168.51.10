@@ -1,0 +1,2 @@
+dokuwiki_enable_tls: False
+cert_mode: ignore

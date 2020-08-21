@@ -1,0 +1,3 @@
+{% for user in dokuwiki_users -%}
+{{ user.get("username") }}:{{ user.get("passwordhash") }}:{{ user.get("fullname") }}:{{ user.get("email") }}:{{ user.get("groups") }}
+{% endfor %}

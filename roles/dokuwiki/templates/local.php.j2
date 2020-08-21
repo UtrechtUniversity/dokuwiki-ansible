@@ -1,0 +1,12 @@
+<?php
+$conf['title']     = '{{ dokuwiki_title }} ';
+$conf['useacl']    = 1;
+$conf['authtype'] = "authplain";
+$conf['superuser'] = '{{ dokuwiki_superuser }}';
+$conf['license'] = '{{ dokuwiki_license }}';
+$conf['start'] = '{{ dokuwiki_start }}';
+$conf['savedir'] = '{{ dokuwiki_maindir }}/data';
+$conf['defaultgroup'] = '{{ dokuwiki_defaultgroup }}';
+{% if dokuwiki_disableactions != '' %}
+$conf['disableactions'] = '{{ dokuwiki_disableactions }}';
+{% endif %}
