@@ -75,7 +75,7 @@
   synchronize:
     src: '{{ dokuwiki_webroot }}/data/'
     dest: '{{ dokuwiki_maindir }}/data'
-  when: data_directory.isdir is not defined
+  when: not data_directory.stat.exists
   delegate_to: "{{ inventory_hostname }}"
 
 
@@ -83,7 +83,7 @@
   synchronize:
     src: '{{ dokuwiki_webroot }}/conf/'
     dest: '{{ dokuwiki_maindir }}/conf'
-  when: conf_directory.isdir is not defined
+  when: not conf_directory.stat.exists
   delegate_to: "{{ inventory_hostname }}"
 
 
