@@ -22,6 +22,11 @@ dokuwiki_license: ''
 # use commas as separators, e.g. 'register,search'.
 dokuwiki_disableactions: register,resendpwd,profile_delete
 
+# By default, the playbook will create or update the local user file. Set the parameter dokuwiki_update_users
+# to False in order to no longer update the local user file, so that local changes to user information
+# (e.g. users that changed their password via the webinterface) are kept.
+dokuwiki_update_users: True
+
 # Default admin credentials are: admin / admin
 # Change this when deploying to a real server
 dokuwiki_users:

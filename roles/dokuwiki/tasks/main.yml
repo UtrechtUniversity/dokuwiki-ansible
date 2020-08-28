@@ -103,6 +103,7 @@
     owner: '{{ dokuwiki_user }}'
     group: '{{ dokuwiki_group }}'
     mode: '0750'
+  when: dokuwiki_update_users
 
 
 - name: Check that Dokuwiki authorization config file exists
