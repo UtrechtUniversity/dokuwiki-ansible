@@ -1,7 +1,9 @@
 {% if dokuwiki_enable_tls %}
 <VirtualHost *:80>
     ServerName {{ dokuwiki_servername }}
-    Redirect / https://{{ dokuwiki_servername }}
+    RewriteEngine on
+    RewriteCond %{SERVER_PORT} !^443$
+    RewriteRule ^/(.*) https://%{HTTP_HOST}%{REQUEST_URI} [NC,R=301,L]
 </VirtualHost>
 {% endif %}
 
