@@ -28,7 +28,7 @@ The dokuwiki\_users variable should contain a list of user names, passwords, and
 ```
 dokuwiki_users:
   admin:
-    password: $2a$15$tavJPYxA3TkWow9biRifBuOzqLEOsSxSpswgejPATuYRawcRTluZO
+    passwordhash: $2a$15$tavJPYxA3TkWow9biRifBuOzqLEOsSxSpswgejPATuYRawcRTluZO
     fullname: Admin User
     email: example@example.org
     groups: users
